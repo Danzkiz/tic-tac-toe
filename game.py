@@ -45,7 +45,6 @@ def game_loop():
             print("Game turn: " + str(game_turn))
 
 
-
 def player_setting():
     player = raw_input("How many players? (0-2)")
 
