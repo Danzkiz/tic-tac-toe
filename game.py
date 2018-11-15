@@ -1,7 +1,7 @@
 # coding=utf-8
 import random
-print("Let's play a game.\n")
 
+print("Let's play a game.\n")
 BOARD = []
 
 
@@ -12,41 +12,43 @@ def game_loop():
 
     create_board()
     while True:
-        print_board()
+        print_board(BOARD)
 
         # who's turn is it
         current_player = get_current_player(game_turn)
         print("It is " + current_player + "'s turn\n")
 
         if no_player == 0:
-            coordinates = ai_coordinates()
+            coordinates = ai_coordinates(BOARD)
         elif no_player == 1 and current_player == "O":
             print("Computers turn")
-            coordinates = ai_coordinates()
+            coordinates = ai_coordinates(BOARD)
         else:
             coordinates = player_coordinates()
 
-        place_token(current_player, coordinates[0], coordinates[1])
+        # Make the move
+        place_token(current_player, BOARD, coordinates[0], coordinates[1])
 
-        game_turn += 1
-
-        if did_win(current_player):
+        # Does the game end:
+        if did_win(current_player, BOARD):
             print('{} has won the game 🏅'.format(current_player))
-            print_board()
+            print_board(BOARD)
             return
 
-        elif is_board_full(game_turn):
+        elif is_board_full(game_turn+1):
             print("The game is over. No winners!")
-            print_board()
+            print_board(BOARD)
             return
 
         else:
             print("Nobody has won yet, keep looping")
+            game_turn += 1
             print("Game turn: " + str(game_turn))
 
 
 def player_setting():
     player = raw_input("How many players? (0-2)")
+    print(player)
 
     while not is_valid_input(player, 0, 2):
         player = raw_input("Please choose between 1 and 2 players?")
@@ -69,8 +71,8 @@ def create_board():
             BOARD[i].append('_')
 
 
-def print_board():
-    for row in BOARD:
+def print_board(board):
+    for row in board:
         print(row)
 
 
@@ -115,35 +117,35 @@ def is_valid_input(input, min, max):
     return True
 
 
-def place_token(token, x_coord, y_coord):
-    BOARD[x_coord][y_coord] = token
+def place_token(token, board, x_coord, y_coord):
+    board[x_coord][y_coord] = token
 
 
-def did_win(player):
+def did_win(player, board):
     player_has_won = False
 
     '#test rows'
-    for row in BOARD:
+    for row in board:
         if same_token_in_row(player, row):
             player_has_won = True
 
     '#test column'
-    for i in range(len(BOARD)):
-            column = []
-            for x in BOARD:
-                column.append(x[i])
-            if same_token_in_row(player, column):
-                player_has_won = True
+    for i in range(len(board)):
+        column = []
+        for x in board:
+            column.append(x[i])
+        if same_token_in_row(player, column):
+            player_has_won = True
 
     '#test diagonal'
     x_test2 = []
     y_test2 = []
-    for i in range(len(BOARD)):
-        x_test = BOARD[i]
+    for i in range(len(board)):
+        x_test = board[i]
         x_test2.append(x_test[i])
 
-        y_test = BOARD[i]
-        y_test2.append(y_test[-(i+1)])
+        y_test = board[i]
+        y_test2.append(y_test[-(i + 1)])
 
     if same_token_in_row(player, x_test2) or same_token_in_row(player, y_test2):
         player_has_won = True
@@ -174,13 +176,13 @@ def is_legal_move(x_coord, y_coord):
         return True
 
 
-def ai_coordinates():
-    x_coord = random.randint(0, len(BOARD)-1)
-    y_coord = random.randint(0, len(BOARD)-1)
+def ai_coordinates(input_board):
+    x_coord = random.randint(0, len(input_board) - 1)
+    y_coord = random.randint(0, len(input_board) - 1)
 
     while not is_legal_move(x_coord, y_coord):
-        x_coord = random.randint(0, len(BOARD)-1)
-        y_coord = random.randint(0, len(BOARD)-1)
+        x_coord = random.randint(0, len(input_board) - 1)
+        y_coord = random.randint(0, len(input_board) - 1)
 
     return [x_coord, y_coord]
 

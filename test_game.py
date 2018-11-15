@@ -2,17 +2,28 @@
 import random
 
 print("Let's play a game.\n")
-
 BOARD = []
 
 
 def game_loop():
     # The game should run until we return
     game_turn = 0
-    no_player = 0 # player_setting()
-    diff_ai = 2 # ai_setting()
 
-    create_board()
+    # Set game options:
+    no_player = player_setting()
+
+    if no_player < 2:
+        diff_ai = ai_setting()
+
+    if diff_ai == 2:
+        create_board()
+    else:
+        size = raw_input("What size should the game be? (3-5): ")
+        while not is_valid_input(size, 3, 6):
+            size = raw_input("What size should the game be? (3-5): ")
+
+        size = int(size)
+        create_board(size)
 
     while True:
         print_board(BOARD)
@@ -22,14 +33,20 @@ def game_loop():
         print("It is " + current_player + "'s turn\n")
 
         # Get a move
-        if no_player == 1 and current_player == "O":
-            print("Computers turn")
-            coordinates = random_coordinates(BOARD)
-        elif no_player == 0:
+        if no_player == 0:
             if diff_ai == 1:
                 coordinates = random_coordinates(BOARD)
+            elif diff_ai == 2:
+                coordinates = ai_coordinates(game_turn, BOARD)
+        elif no_player == 1:
+            if current_player == "O":
+                print("Computer's turn\n")
+                if diff_ai == 1:
+                    coordinates = random_coordinates(BOARD)
+                else:
+                    coordinates = ai_coordinates(game_turn, BOARD)
             else:
-                coordinates = minimax_coordinates(game_turn, BOARD)
+                coordinates = player_coordinates()
         else:
             coordinates = player_coordinates()
 
@@ -42,7 +59,7 @@ def game_loop():
             print_board(BOARD)
             return
 
-        elif is_board_full(game_turn):
+        elif is_board_full(game_turn+1):
             print("The game is over. No winners!")
             print_board(BOARD)
             return
@@ -50,6 +67,7 @@ def game_loop():
         else:
             print("Nobody has won yet, keep looping")
             game_turn += 1
+            print("Game turn: " + str(game_turn))
 
 
 def player_setting():
@@ -73,14 +91,9 @@ def ai_setting():
 
     return ai
 
-def create_board():
+
+def create_board(size=3):
     # create the board
-    size = raw_input("What size should the game be? (3-5): ")
-    while not is_valid_input(size, 3, 6):
-        size = raw_input("What size should the game be? (3-5): ")
-
-    size = int(size)
-
     for i in range(size):
         BOARD.append([])
         for j in range(size):
@@ -102,11 +115,11 @@ def get_current_player(num):
 def player_coordinates():
     while True:
         x_coord = raw_input('Choose a row?\n')
-        while not is_valid_input(x_coord, 1, len(BOARD)+1):
+        while not is_valid_input(x_coord, 1, len(BOARD)):
             x_coord = raw_input('please select a valid row?\n')
 
         y_coord = raw_input("Choose a column?")
-        while not is_valid_input(y_coord, 1, len(BOARD)+1):
+        while not is_valid_input(y_coord, 1, len(BOARD)):
             y_coord = raw_input('please select a valid column?\n')
 
         x_coord = int(x_coord)-1
@@ -125,6 +138,7 @@ def is_valid_input(input, min, max):
         return False
     # Note the int(coordinate).
     # We need to cast to Int before
+    # max has +1 because range() excludes the last number. This makes it more intuitive
     if not int(input) in range(min, max+1):
         return False
 
@@ -146,11 +160,11 @@ def did_win(player, board):
 
     '#test column'
     for i in range(len(board)):
-            column = []
-            for x in board:
-                column.append(x[i])
-            if same_token_in_row(player, column):
-                player_has_won = True
+        column = []
+        for x in board:
+            column.append(x[i])
+        if same_token_in_row(player, column):
+            player_has_won = True
 
     '#test diagonal'
     x_test2 = []
@@ -160,7 +174,7 @@ def did_win(player, board):
         x_test2.append(x_test[i])
 
         y_test = board[i]
-        y_test2.append(y_test[-(i+1)])
+        y_test2.append(y_test[-(i + 1)])
 
     if same_token_in_row(player, x_test2) or same_token_in_row(player, y_test2):
         player_has_won = True
@@ -187,17 +201,17 @@ def is_legal_move(x_coord, y_coord):
 
     if tic == 'X' or tic == 'O':
         return False
-
-    return True
+    else:
+        return True
 
 
 def random_coordinates(input_board):
-    x_coord = random.randint(0, len(input_board)-1)
-    y_coord = random.randint(0, len(input_board)-1)
+    x_coord = random.randint(0, len(input_board) - 1)
+    y_coord = random.randint(0, len(input_board) - 1)
 
     while not is_legal_move(x_coord, y_coord):
-        x_coord = random.randint(0, len(input_board)-1)
-        y_coord = random.randint(0, len(input_board)-1)
+        x_coord = random.randint(0, len(input_board) - 1)
+        y_coord = random.randint(0, len(input_board) - 1)
 
     return [x_coord, y_coord]
 
@@ -227,59 +241,108 @@ def minimax_recursion(board, game_turn, path, moves, best_solution):
 
         remaining_moves = available_moves(board)
 
-        print(path)
-        print_board(board)
-
-        #check to see if move wins the game
+        # check to see if move wins or tie the game
         if did_win('X', board):
-            solutions.append({"score": -10, "turns": game_turn, "path": path})
+            solutions.append({"score": -10, "turns": game_turn, "path": list(path)})
             board[path[-1][0]][path[-1][1]] = '_'
             path.pop()
-            if best_solution[0] >= game_turn:
+            if best_solution[0] > game_turn:
                 best_solution[0] = game_turn
 
             return solutions
 
         if did_win('O', board):
-            solutions.append({"score": 10, "turns": game_turn, "path": path})
+            solutions.append({"score": 10, "turns": game_turn, "path": list(path)})
             board[path[-1][0]][path[-1][1]] = '_'
             path.pop()
-            if best_solution[0] >= game_turn:
+            if best_solution[0] > game_turn:
                 best_solution[0] = game_turn
 
             return solutions
 
         if len(remaining_moves) == 0:
-            solutions.append({"score": 0, "turns": game_turn, "path": path})
+            solutions.append({"score": 0, "turns": game_turn, "path": list(path)})
             board[path[-1][0]][path[-1][1]] = '_'
             path.pop()
 
             return solutions
 
         else:
-            print(remaining_moves)
             # checks to see if it's a better solution
             if best_solution[0] >= game_turn:
-                solutions.extend(minimax_recursion(board, game_turn+1, path, remaining_moves, best_solution))
+                solutions.extend(minimax_recursion(board, game_turn + 1, path, remaining_moves, best_solution))
             board[path[-1][0]][path[-1][1]] = '_'
             path.pop()
-
 
     return solutions
 
 
-
-# Test this first:
-def minimax_coordinates(game_turn, board):
-
+def find_minimax_solutions(game_turn, board):
     avail_moves = available_moves(board)
-    best_solution = [len(board)**2]
+    best_solution = [len(board) ** 2]
+
     # find solutions
-    solutions = minimax_recursion(board, game_turn, [], avail_moves, best_solution)
+    return minimax_recursion(board, game_turn, [], avail_moves, best_solution)
 
 
+def ai_coordinates(game_turn, board):
+    computer_move = []
+    possible_solutions = find_minimax_solutions(game_turn, board)
 
-    return
+    sorted_solutions = sorted(possible_solutions, key=lambda x: x['turns'])
+
+    if get_current_player(game_turn) == 'X':
+        win_solutions = filter(lambda x: x['score'] != 10, sorted_solutions)
+        loose_solutions = filter(lambda x: x['score'] != -10, sorted_solutions)
+    else:
+        win_solutions = filter(lambda x: x['score'] != -10, sorted_solutions)
+        loose_solutions = filter(lambda x: x['score'] != 10, sorted_solutions)
+
+    # can I win next round?
+    for solution in win_solutions:
+        if len(solution['path']) == 1:
+            computer_move = solution['path'][0]
+            break
+
+    # do I loose next round?
+    for solution in loose_solutions:
+        if len(solution['path']) == 2:
+            computer_move = solution['path'][1]
+            break
+
+    # the not so smart choice:
+    if len(computer_move) == 0:
+        computer_move = win_solutions[random.randint(0, len(win_solutions))]['path'][0]
+
+    print("Computer: I pick " + "[" + str(computer_move[0] + 1) + "," + str(computer_move[1] + 1) + "]")
+    return computer_move
+
+
+total_solutions = {}
+
+
+def minimax_once_over(game_turn, board):
+    if len(total_solutions) == 0:
+        print("Computer: 'I'm thinking...'\n")
+        global total_solutions
+        total_solutions = find_minimax_solutions(game_turn, board)
+        sorted_solutions = sorted(total_solutions, key=lambda x: x['turns'])
+
+        filtered_solutions = filter(lambda x: x['score'] != -10, sorted_solutions)
+
+        # shortest_game = filtered_solutions[0]['turns']
+        shortest_game = sorted_solutions[0]['turns']
+
+        total_solutions = filter(lambda x: x['turns'] == shortest_game, filtered_solutions)
+        # filtered_solutions = {k:v for (k,v) in winning_solutions.iteritems() if 'score' == 10}
+
+    # remove all invalid paths from the solutions, ie. if a move has been made that is not in the path
+    avail_move = available_moves(board)
+    for solution in total_solutions:
+        for path in solution['path']:
+            if path == avail_move:
+                del solution
+
 
 # Run the program
 game_loop()
