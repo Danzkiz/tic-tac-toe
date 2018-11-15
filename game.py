@@ -8,9 +8,23 @@ BOARD = []
 def game_loop():
     # The game should run until we return
     game_turn = 0
+
+    # Set game options:
     no_player = player_setting()
 
-    create_board()
+    if no_player < 2:
+        diff_ai = ai_setting()
+
+    if diff_ai == 2:
+        create_board()
+    else:
+        size = raw_input("What size should the game be? (3-5): ")
+        while not is_valid_input(size, 3, 6):
+            size = raw_input("What size should the game be? (3-5): ")
+
+        size = int(size)
+        create_board(size)
+
     while True:
         print_board(BOARD)
 
@@ -18,11 +32,21 @@ def game_loop():
         current_player = get_current_player(game_turn)
         print("It is " + current_player + "'s turn\n")
 
+        # Get a move
         if no_player == 0:
-            coordinates = random_coordinates(BOARD)
-        elif no_player == 1 and current_player == "O":
-            print("Computers turn")
-            coordinates = random_coordinates(BOARD)
+            if diff_ai == 1:
+                coordinates = random_coordinates(BOARD)
+            elif diff_ai == 2:
+                coordinates = ai_coordinates(game_turn, BOARD)
+        elif no_player == 1:
+            if current_player == "O":
+                print("Computer's turn\n")
+                if diff_ai == 1:
+                    coordinates = random_coordinates(BOARD)
+                else:
+                    coordinates = ai_coordinates(game_turn, BOARD)
+            else:
+                coordinates = player_coordinates()
         else:
             coordinates = player_coordinates()
 
@@ -57,14 +81,18 @@ def player_setting():
     return player
 
 
-def create_board():
+def ai_setting():
+    ai = raw_input("How difficult? easy = 1, hard = 2")
+
+    while not is_valid_input(ai, 1, 2):
+        ai = raw_input("Please choose between 1 or 2.")
+
+    ai = int(ai)
+    return ai
+
+
+def create_board(size=3):
     # create the board
-    size = raw_input("What size should the game be? (3-5): ")
-    while not is_valid_input(size, 3, 5):
-        size = raw_input("What size should the game be? (3-5): ")
-
-    size = int(size)
-
     for i in range(size):
         BOARD.append([])
         for j in range(size):
@@ -251,9 +279,10 @@ def minimax_recursion(board, game_turn, path, moves, shortest_path):
 
 def find_minimax_solutions(game_turn, board):
     avail_moves = available_moves(board)
+    possible_turns = [len(board) ** 2]
 
     # find solutions
-    return minimax_recursion(board, game_turn, [], avail_moves, possible_turns=[len(board) ** 2])
+    return minimax_recursion(board, game_turn, [], avail_moves, possible_turns)
 
 
 def ai_coordinates(game_turn, board):
