@@ -19,10 +19,10 @@ def game_loop():
         print("It is " + current_player + "'s turn\n")
 
         if no_player == 0:
-            coordinates = ai_coordinates(BOARD)
+            coordinates = random_coordinates(BOARD)
         elif no_player == 1 and current_player == "O":
             print("Computers turn")
-            coordinates = ai_coordinates(BOARD)
+            coordinates = random_coordinates(BOARD)
         else:
             coordinates = player_coordinates()
 
@@ -176,7 +176,7 @@ def is_legal_move(x_coord, y_coord):
         return True
 
 
-def ai_coordinates(input_board):
+def random_coordinates(input_board):
     x_coord = random.randint(0, len(input_board) - 1)
     y_coord = random.randint(0, len(input_board) - 1)
 
